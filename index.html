@@ -15,13 +15,16 @@
             --success: #10b981;
         }
 
-        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); touch-action: manipulation; }
+        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); touch-action: manipulation; transition: direction 0.3s; }
+        body.rtl { direction: rtl; }
         
         /* Layout */
-        .navbar { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .navbar { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; transition: padding 0.3s; }
         .navbar h2 { font-size: 1.25rem; margin: 0; }
         .container { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .rtl .container { grid-template-columns: 1fr 350px; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .rtl .container { grid-template-columns: 1fr; } }
         @media (max-width: 480px) { .navbar { padding: 0.75rem 1rem; } .container { gap: 1.5rem; } }
         
         /* Components */
@@ -38,6 +41,11 @@
         button:active { transform: translateY(0); }
         button:disabled { background: #cbd5e1; cursor: not-allowed; }
         
+        .lang-btn-small { width: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #e2e8f0; color: var(--text); border-radius: 6px; }
+        .lang-btn-small:hover { background: #cbd5e1; }
+        .navbar .lang-btn-small { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .navbar .lang-btn-small:hover { background: rgba(255,255,255,0.2); }
+
         /* Juice List */
         .juice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
         .juice-item { background: white; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
@@ -64,11 +72,14 @@
         .toast.success { border-left-color: var(--success); }
         .toast.error { border-left-color: var(--danger); }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .rtl .toast { left: 20px; right: auto; border-left: none; border-right: 4px solid var(--primary); animation: slideInLeft 0.3s ease-out; }
+        @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* Custom Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 10000; }
         .modal { background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; }
         .modal-buttons { display: flex; gap: 10px; margin-top: 1.5rem; }
+        .rtl .modal-buttons { flex-direction: row-reverse; }
         .btn-secondary { background: #e2e8f0; color: var(--text); }
         .btn-secondary:hover { background: #cbd5e1; }
     </style>
@@ -81,46 +92,56 @@
             <h3 id="modal-title">Confirm Action</h3>
             <p id="modal-message">Are you sure you want to proceed?</p>
             <div class="modal-buttons">
-                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn-secondary" id="modal-cancel-btn" onclick="closeModal()">Cancel</button>
                 <button id="modal-confirm-btn" style="background: var(--danger);">Confirm</button>
             </div>
         </div>
     </div>
 
     <div id="login-form" class="card login-card">
-        <h1>Admin Login</h1>
-        <p style="color: #64748b; margin-bottom: 2rem;">Access limited to authorized personnel.</p>
-        <button onclick="loginWithGoogle()">Sign In with Google</button>
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: center; gap: 10px;">
+            <button class="lang-btn-small" onclick="setLanguage('en')">English</button>
+            <button class="lang-btn-small" onclick="setLanguage('ar')">العربية</button>
+        </div>
+        <h1 id="login-header">Admin Login</h1>
+        <p id="login-desc" style="color: #64748b; margin-bottom: 2rem;">Access limited to authorized personnel.</p>
+        <button id="login-google-btn" onclick="loginWithGoogle()">Sign In with Google</button>
     </div>
     
     <div id="admin-content">
         <nav class="navbar">
-            <h2>Shake It Admin</h2>
-            <button class="logout-btn" onclick="logout()">Sign Out</button>
+            <h2 id="nav-title">Shake It Admin</h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="lang-switcher">
+                    <button class="lang-btn-small" onclick="setLanguage('en')">EN</button>
+                    <button class="lang-btn-small" onclick="setLanguage('ar')">AR</button>
+                </div>
+                <button class="logout-btn" id="logout-btn" onclick="logout()">Sign Out</button>
+            </div>
         </nav>
         
         <div class="container">
             <form class="card" id="form-container" onsubmit="handleFormSubmit(event)">
                 <h3 id="form-title">Add New Juice</h3>
                 <div class="input-group">
-                    <label>Unique ID</label>
+                    <label id="label-id">Unique ID</label>
                     <input type="text" id="j_id" placeholder="e.g. mango-fresh" autocomplete="off" required>
                 </div>
                 <div class="input-group">
-                    <label>English Name</label>
+                    <label id="label-en">English Name</label>
                     <input type="text" id="j_en" placeholder="Fresh Mango" autocomplete="off" required>
                 </div>
                 <div class="input-group">
-                    <label>Arabic Name</label>
+                    <label id="label-ar">Arabic Name</label>
                     <input type="text" id="j_ar" placeholder="مانجو طازج" autocomplete="off" required>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="input-group">
-                        <label>Small Price</label>
+                        <label id="label-ps">Small Price</label>
                         <input type="number" id="j_ps" placeholder="0" required>
                     </div>
                     <div class="input-group">
-                        <label>Large Price</label>
+                        <label id="label-pl">Large Price</label>
                         <input type="number" id="j_pl" placeholder="0" required>
                     </div>
                 </div>
@@ -131,7 +152,7 @@
             </form>
 
             <div>
-                <h3>Existing Items</h3>
+                <h3 id="header-existing">Existing Items</h3>
                 <div id="juice-list" class="juice-grid"></div>
             </div>
         </div>
@@ -158,6 +179,70 @@
         const AUTHORIZED_EMAILS = ["omarhassanx2121@gmail.com", "ahmadhasanx21@gmail.com"];
         let currentEditId = null;
         let unsubscribeJuices = null;
+        let currentLang = localStorage.getItem('shakeItLang') || 'en';
+
+        const translations = {
+            en: {
+                navTitle: "Shake It Admin", logout: "Sign Out", loginHeader: "Admin Login",
+                loginDesc: "Access limited to authorized personnel.", loginBtn: "Sign In with Google",
+                formAdd: "Add New Juice", formEdit: "Edit Juice", labelId: "Unique ID",
+                labelEn: "English Name", labelAr: "Arabic Name", labelPs: "Small Price",
+                labelPl: "Large Price", btnAdd: "Add to Inventory", btnUpdate: "Update Juice",
+                btnCancel: "Cancel", btnEdit: "Edit", btnDelete: "Delete",
+                existingItems: "Existing Items", loading: "Loading inventory...",
+                noItems: "No items found.", toastSuccessAdd: "Juice added!",
+                toastSuccessUpdate: "Juice updated!", toastRemoved: "Item removed.",
+                toastErrorFields: "Please fill all fields correctly.",
+                toastDenied: "Access Denied: Unauthorized email.",
+                toastProtocolError: "Cannot run from file:// protocol. Use a local server.",
+                confirmTitle: "Delete Juice", confirmMsg: "Are you sure you want to remove \"{name}\"?",
+                confirmBtn: "Confirm"
+            },
+            ar: {
+                navTitle: "مسؤول شيك إت", logout: "تسجيل الخروج", loginHeader: "تسجيل دخول المسؤول",
+                loginDesc: "الدخول مقتصر على الموظفين المصرح لهم.", loginBtn: "تسجيل الدخول باستخدام جوجل",
+                formAdd: "إضافة عصير جديد", formEdit: "تعديل العصير", labelId: "المعرف الفريد",
+                labelEn: "الاسم بالإنجليزية", labelAr: "الاسم بالعربية", labelPs: "سعر صغير",
+                labelPl: "سعر كبير", btnAdd: "إضافة إلى المخزون", btnUpdate: "تحديث العصير",
+                btnCancel: "إلغاء", btnEdit: "تعديل", btnDelete: "حذف",
+                existingItems: "الأصناف الحالية", loading: "جاري تحميل المخزون...",
+                noItems: "لم يتم العثور على أصناف.", toastSuccessAdd: "تمت إضافة العصير!",
+                toastSuccessUpdate: "تم تحديث العصير!", toastRemoved: "تمت إزالة الصنف.",
+                toastErrorFields: "يرجى ملء جميع الحقول بشكل صحيح.",
+                toastDenied: "تم رفض الوصول: بريد إلكتروني غير مصرح به.",
+                toastProtocolError: "لا يمكن التشغيل من بروتوكول file://. استخدم خادماً محلياً.",
+                confirmTitle: "حذف العصير", confirmMsg: "هل أنت متأكد أنك تريد إزالة \"{name}\"؟",
+                confirmBtn: "تأكيد"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('shakeItLang', lang);
+            document.body.className = lang === 'ar' ? 'rtl' : '';
+            const t = translations[lang];
+            
+            document.getElementById('login-header').innerText = t.loginHeader;
+            document.getElementById('login-desc').innerText = t.loginDesc;
+            document.getElementById('login-google-btn').innerHTML = `<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px; vertical-align:middle; margin-right:8px;"> ${t.loginBtn}`;
+            
+            if (document.getElementById('admin-content').style.display === 'block') {
+                document.getElementById('nav-title').innerText = t.navTitle;
+                document.getElementById('logout-btn').innerText = t.logout;
+                document.getElementById('form-title').innerText = currentEditId ? t.formEdit : t.formAdd;
+                document.getElementById('label-id').innerText = t.labelId;
+                document.getElementById('label-en').innerText = t.labelEn;
+                document.getElementById('label-ar').innerText = t.labelAr;
+                document.getElementById('label-ps').innerText = t.labelPs;
+                document.getElementById('label-pl').innerText = t.labelPl;
+                document.getElementById('submit-btn').innerText = currentEditId ? t.btnUpdate : t.btnAdd;
+                document.getElementById('cancel-edit-btn').innerText = t.btnCancel;
+                document.getElementById('header-existing').innerText = t.existingItems;
+                document.getElementById('modal-confirm-btn').innerText = t.confirmBtn;
+                document.getElementById('modal-cancel-btn').innerText = t.btnCancel;
+                if (unsubscribeJuices) initRealtimeUpdates();
+            }
+        }
 
         // Handle Auth State Changes
         auth.onAuthStateChanged(user => {
@@ -165,9 +250,10 @@
                 if (AUTHORIZED_EMAILS.includes(user.email)) {
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('admin-content').style.display = 'block';
+                    setLanguage(currentLang);
                     initRealtimeUpdates();
                 } else {
-                    showToast("Access Denied: Unauthorized email.", "error");
+                    showToast(translations[currentLang].toastDenied, "error");
                     auth.signOut();
                 }
             } else {
@@ -183,7 +269,7 @@
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             if (window.location.protocol === 'file:') {
-                showToast("Cannot run from file:// protocol. Use a local server.", "error");
+                showToast(translations[currentLang].toastProtocolError, "error");
                 return;
             }
             try {
@@ -248,14 +334,15 @@
             const price_l = parseInt(document.getElementById('j_pl').value);
 
             if (!id || id.length < 2 || !en || !ar || isNaN(price_s) || isNaN(price_l)) {
-                showToast("Please fill all fields correctly.", "error");
+                showToast(translations[currentLang].toastErrorFields, "error");
                 return;
             }
 
             submitBtn.disabled = true;
+            const t = translations[currentLang];
             try {
                 await db.collection('juices').doc(id).set({ id, en, ar, price_s, price_l });
-                showToast(currentEditId ? "Juice updated!" : "Juice added!", "success");
+                showToast(currentEditId ? t.toastSuccessUpdate : t.toastSuccessAdd, "success");
                 if (currentEditId) cancelEdit();
                 else resetForm();
             } catch (error) {
@@ -280,8 +367,10 @@
             document.getElementById('j_ps').value = data.price_s;
             document.getElementById('j_pl').value = data.price_l;
 
-            document.getElementById('form-title').innerText = "Edit Juice";
-            document.getElementById('submit-btn').innerText = "Update Juice";
+            const t = translations[currentLang];
+            document.getElementById('form-title').innerText = t.formEdit;
+            document.getElementById('submit-btn').innerText = t.btnUpdate;
+            document.getElementById('cancel-edit-btn').innerText = t.btnCancel;
             document.getElementById('cancel-edit-btn').style.display = 'block';
             
             // Scroll form into view for mobile users
@@ -291,14 +380,16 @@
         function cancelEdit() {
             currentEditId = null;
             resetForm();
-            document.getElementById('form-title').innerText = "Add New Juice";
-            document.getElementById('submit-btn').innerText = "Add to Inventory";
+            const t = translations[currentLang];
+            document.getElementById('form-title').innerText = t.formAdd;
+            document.getElementById('submit-btn').innerText = t.btnAdd;
             document.getElementById('cancel-edit-btn').style.display = 'none';
         }
 
         function initRealtimeUpdates() {
             const list = document.getElementById('juice-list');
-            list.innerHTML = '<p style="color: #64748b;">Loading inventory...</p>';
+            const t = translations[currentLang];
+            list.innerHTML = `<p style="color: #64748b;">${t.loading}</p>`;
 
             unsubscribeJuices = db.collection('juices').orderBy('en').onSnapshot(snapshot => {
                 list.innerHTML = '';
@@ -312,24 +403,28 @@
                             <span>${item.ar} • S: ${item.price_s} / L: ${item.price_l}</span>
                         </div>
                         <div class="action-btns">
-                            <button type="button" class="btn-icon edit-btn" onclick="startEdit('${doc.id}')">Edit</button>
-                            <button type="button" class="btn-icon delete-btn" onclick="confirmDelete('${doc.id}', '${item.en}')">Delete</button>
+                            <button type="button" class="btn-icon edit-btn" onclick="startEdit('${doc.id}')">${t.btnEdit}</button>
+                            <button type="button" class="btn-icon delete-btn" onclick="confirmDelete('${doc.id}', '${item.en}')">${t.btnDelete}</button>
                         </div>
                     `;
                     list.appendChild(div);
                 });
-                if (snapshot.empty) list.innerHTML = '<p style="color: #64748b;">No items found.</p>';
+                if (snapshot.empty) list.innerHTML = `<p style="color: #64748b;">${t.noItems}</p>`;
             });
         }
 
         function confirmDelete(id, name) {
-            openConfirmModal("Delete Juice", `Are you sure you want to remove "${name}"?`, () => deleteJuice(id));
+            const t = translations[currentLang];
+            const msg = t.confirmMsg.replace('{name}', name);
+            openConfirmModal(t.confirmTitle, msg, () => deleteJuice(id));
         }
 
         async function deleteJuice(id) {
             await db.collection('juices').doc(id).delete();
-            showToast("Item removed.", "success");
+            showToast(translations[currentLang].toastRemoved, "success");
         }
+
+        setLanguage(currentLang);
     </script>
 </body>
 </html>
