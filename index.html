@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Dashboard - Abo Dodo</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style2.css">
 </head>
 <body>
     <div id="toast-container"></div>
@@ -27,7 +27,7 @@
         </div>
         <h1 id="login-header">Admin Login</h1>
         <p id="login-desc" style="color: #64748b; margin-bottom: 2rem;">Access limited to authorized personnel.</p>
-        <button id="login-google-btn" onclick="loginWithGoogle()">Sign In with Google</button>
+        <button id="login-google-btn" onclick="loginWithGoogle()" aria-label="Sign in with Google">Sign In with Google</button>
     </div>
     
     <div id="admin-content">
@@ -42,7 +42,14 @@
             </div>
         </nav>
         
-        <div class="container">
+        <div class="tab-container">
+            <button class="tab-btn active" id="tab-inventory" onclick="showTab('inventory')" data-i18n="tabInventory">Inventory</button>
+            <button class="tab-btn" id="tab-active" onclick="showTab('active-orders')" data-i18n="tabActive">Active Orders</button>
+            <button class="tab-btn" id="tab-completed" onclick="showTab('completed-orders')" data-i18n="tabCompleted">Completed History</button>
+            <button class="tab-btn" id="tab-analytics" onclick="showTab('analytics')" data-i18n="tabAnalytics">Analytics</button>
+        </div>
+
+        <div class="container" id="inventory-view">
             <form class="card" id="form-container" onsubmit="handleFormSubmit(event)">
                 <h3 id="form-title">Add New Juice</h3>
                 <div class="input-group">
@@ -67,6 +74,10 @@
                         <input type="number" id="j_pl" placeholder="0" required>
                     </div>
                 </div>
+                <div class="input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="j_avail" checked style="width: auto;">
+                    <label for="j_avail" style="margin: 0;">Item is Available for Sale</label>
+                </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" id="cancel-edit-btn" class="btn-secondary" style="display: none;" onclick="cancelEdit()">Cancel</button>
                     <button type="submit" id="submit-btn">Add to Inventory</button>
@@ -78,11 +89,58 @@
                 <div id="juice-list" class="juice-grid"></div>
             </div>
         </div>
+
+        <div class="container" id="active-orders-view" style="display: none;">
+            <h3 data-i18n="headerActive">Active Orders</h3>
+            <div id="orders-list" class="orders-grid"></div>
+        </div>
+
+        <div class="container" id="completed-orders-view" style="display: none;">
+            <div class="card history-controls" style="margin-bottom: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="order-search" placeholder="Search by name..." oninput="renderOrders()" style="flex: 1; min-width: 200px;">
+                <select id="order-sort" onchange="renderOrders()" style="width: auto; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <option value="desc" data-i18n="sortNewest">Newest First</option>
+                    <option value="asc" data-i18n="sortOldest">Oldest First</option>
+                    <option value="totalDesc" data-i18n="sortTotalHigh">Total: High to Low</option>
+                    <option value="totalAsc" data-i18n="sortTotalLow">Total: Low to High</option>
+                    <option value="nameAZ" data-i18n="sortNameAZ">Shop Name: A-Z</option>
+                    <option value="nameZA" data-i18n="sortNameZA">Shop Name: Z-A</option>
+                </select>
+            </div>
+            <div id="completed-orders-list" class="orders-grid"></div>
+        </div>
+
+        <div class="container" id="analytics-view" style="display: none; grid-template-columns: 1fr;">
+            <div class="stats-overview">
+                <div class="card stat-card">
+                    <h4 data-i18n="statTotalOrders">Total Orders</h4>
+                    <p id="stat-count">0</p>
+                </div>
+                <div class="card stat-card">
+                    <h4 data-i18n="statTotalRevenue">Total Revenue</h4>
+                    <p id="stat-revenue">0</p>
+                </div>
+                <div class="card stat-card">
+                    <h4 data-i18n="statAOV">Avg Order Value</h4>
+                    <p id="stat-aov">0</p>
+                </div>
+            </div>
+            
+            <div class="card chart-container">
+                <canvas id="ordersChart"></canvas>
+            </div>
+
+            <div class="card chart-container" style="margin-top: 1.5rem;">
+                <canvas id="mostSoldChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script2.js" defer></script>
 </body>
 </html>
