@@ -104,24 +104,24 @@
                 <h3 id="form-title">Add New Juice</h3>
                 <div class="input-group">
                     <label>Unique ID</label>
-                    <input type="text" id="j_id" placeholder="e.g. mango-fresh">
+                    <input type="text" id="j_id" placeholder="e.g. mango-fresh" autocomplete="off" required>
                 </div>
                 <div class="input-group">
                     <label>English Name</label>
-                    <input type="text" id="j_en" placeholder="Fresh Mango">
+                    <input type="text" id="j_en" placeholder="Fresh Mango" autocomplete="off" required>
                 </div>
                 <div class="input-group">
                     <label>Arabic Name</label>
-                    <input type="text" id="j_ar" placeholder="مانجو طازج">
+                    <input type="text" id="j_ar" placeholder="مانجو طازج" autocomplete="off" required>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="input-group">
                         <label>Small Price</label>
-                        <input type="number" id="j_ps" placeholder="0">
+                        <input type="number" id="j_ps" placeholder="0" required>
                     </div>
                     <div class="input-group">
                         <label>Large Price</label>
-                        <input type="number" id="j_pl" placeholder="0">
+                        <input type="number" id="j_pl" placeholder="0" required>
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
@@ -237,24 +237,32 @@
         }
 
         async function saveJuice() {
-            const id = document.getElementById('j_id').value.trim().replace(/\s+/g, '-').toLowerCase();
+            const submitBtn = document.getElementById('submit-btn');
+            const idInput = document.getElementById('j_id');
+            
+            // Sanitize ID: only allow lowercase, numbers, and hyphens
+            const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
             const en = document.getElementById('j_en').value.trim();
             const ar = document.getElementById('j_ar').value.trim();
             const price_s = parseInt(document.getElementById('j_ps').value);
             const price_l = parseInt(document.getElementById('j_pl').value);
 
-            if (!id || !en || !ar || isNaN(price_s) || isNaN(price_l)) {
+            if (!id || id.length < 2 || !en || !ar || isNaN(price_s) || isNaN(price_l)) {
                 showToast("Please fill all fields correctly.", "error");
                 return;
             }
 
+            submitBtn.disabled = true;
             try {
                 await db.collection('juices').doc(id).set({ id, en, ar, price_s, price_l });
                 showToast(currentEditId ? "Juice updated!" : "Juice added!", "success");
                 if (currentEditId) cancelEdit();
                 else resetForm();
             } catch (error) {
+                console.error(error);
                 showToast("Error: " + error.message, "error");
+            } finally {
+                submitBtn.disabled = false;
             }
         }
 
