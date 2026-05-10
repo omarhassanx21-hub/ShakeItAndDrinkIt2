@@ -78,7 +78,11 @@ function setLanguage(lang) {
         document.getElementById('header-existing').innerText = t.existingItems;
         document.getElementById('modal-confirm-btn').innerText = t.confirmBtn;
         document.getElementById('modal-cancel-btn').innerText = t.btnCancel;
-        if (unsubscribeJuices) initRealtimeUpdates();
+        
+        // Re-render the list if we are logged in to update button labels
+        if (document.getElementById('admin-content').style.display === 'block') {
+            initRealtimeUpdates();
+        }
     }
 }
 
@@ -87,7 +91,6 @@ auth.onAuthStateChanged(user => {
         if (AUTHORIZED_EMAILS.includes(user.email)) {
             document.getElementById('login-form').style.display = 'none';
             document.getElementById('admin-content').style.display = 'block';
-            setLanguage(currentLang);
             initRealtimeUpdates();
         } else {
             showToast(translations[currentLang].toastDenied, "error");
@@ -162,7 +165,8 @@ function resetForm() {
 async function saveJuice() {
     const submitBtn = document.getElementById('submit-btn');
     const idInput = document.getElementById('j_id');
-    const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+    // Sanitize ID: remove non-alphanumeric, handle multiple hyphens, and trim trailing hyphens
+    const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
     const en = document.getElementById('j_en').value.trim();
     const ar = document.getElementById('j_ar').value.trim();
     const price_s = parseInt(document.getElementById('j_ps').value);
@@ -220,9 +224,13 @@ function cancelEdit() {
 }
 
 function initRealtimeUpdates() {
+    // Important: Unsubscribe from the previous listener if it exists to prevent leaks and duplicates
+    if (unsubscribeJuices) {
+        unsubscribeJuices();
+    }
+
     const list = document.getElementById('juice-list');
     const t = translations[currentLang];
-    list.innerHTML = `<p style="color: #64748b;">${t.loading}</p>`;
 
     unsubscribeJuices = db.collection('juices').orderBy('en').onSnapshot(snapshot => {
         list.innerHTML = '';
