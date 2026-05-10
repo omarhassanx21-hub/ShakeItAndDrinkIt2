@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Dashboard - Shake It</title>
+    <style>
+        :root {
+            --primary: #312e81;
+            --accent: #4f46e5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); touch-action: manipulation; }
+        
+        /* Layout */
+        .navbar { background: var(--primary); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .navbar h2 { font-size: 1.25rem; margin: 0; }
+        .container { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        @media (max-width: 480px) { .navbar { padding: 0.75rem 1rem; } .container { gap: 1.5rem; } }
+        
+        /* Components */
+        .card { background: var(--card); padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h1, h2, h3 { margin-top: 0; color: var(--primary); }
+        
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; color: #64748b; }
+        input { width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s; }
+        input:focus { outline: none; border-color: var(--accent); }
+        
+        button { width: 100%; padding: 0.75rem; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
+        button:hover:not(:disabled) { background: var(--accent); transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; }
+        
+        /* Juice List */
+        .juice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .juice-item { background: white; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .juice-item.editing { border-color: var(--accent); background: #f5f3ff; ring: 2px solid var(--accent); }
+        .juice-info b { display: block; font-size: 1.1rem; }
+        .juice-info span { font-size: 0.85rem; color: #64748b; }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .btn-icon { width: auto; padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+        .edit-btn { background: #e0e7ff; color: var(--accent); }
+        .delete-btn { background: #fee2e2; color: var(--danger); }
+        .delete-btn:hover { background: var(--danger); color: white; }
+
+        /* Auth Screens */
+        .login-card { max-width: 400px; margin: 15vh auto; text-align: center; width: 90%; }
+        .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.3); width: auto; padding: 0.5rem 1rem; }
+        .logout-btn:hover { background: rgba(255,255,255,0.1); }
+
+        #admin-content { display: none; }
+
+        /* Modern Notifications (Toasts) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10001; }
+        .toast { background: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 10px; border-left: 4px solid var(--primary); animation: slideIn 0.3s ease-out; display: flex; align-items: center; min-width: 250px; }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Custom Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 10000; }
+        .modal { background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 1.5rem; }
+        .btn-secondary { background: #e2e8f0; color: var(--text); }
+        .btn-secondary:hover { background: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title">Confirm Action</h3>
+            <p id="modal-message">Are you sure you want to proceed?</p>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button id="modal-confirm-btn" style="background: var(--danger);">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-form" class="card login-card">
+        <h1>Admin Login</h1>
+        <p style="color: #64748b; margin-bottom: 2rem;">Access limited to authorized personnel.</p>
+        <button onclick="loginWithGoogle()">Sign In with Google</button>
+    </div>
+    
+    <div id="admin-content">
+        <nav class="navbar">
+            <h2>Shake It Admin</h2>
+            <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </nav>
+        
+        <div class="container">
+            <div class="card" id="form-container">
+            <form class="card" id="form-container" onsubmit="handleFormSubmit(event)">
+                <h3 id="form-title">Add New Juice</h3>
+                <div class="input-group">
+                    <label>Unique ID</label>
+                    <input type="text" id="j_id" placeholder="e.g. mango-fresh">
+                </div>
+                <div class="input-group">
+                    <label>English Name</label>
+                    <input type="text" id="j_en" placeholder="Fresh Mango">
+                </div>
+                <div class="input-group">
+                    <label>Arabic Name</label>
+                    <input type="text" id="j_ar" placeholder="مانجو طازج">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-group">
+                        <label>Small Price</label>
+                        <input type="number" id="j_ps" placeholder="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Large Price</label>
+                        <input type="number" id="j_pl" placeholder="0">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="cancel-edit-btn" class="btn-secondary" style="display: none;" onclick="cancelEdit()">Cancel</button>
+                    <button id="submit-btn" onclick="saveJuice()">Add to Inventory</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-secondary" style="display: none;" onclick="cancelEdit()">Cancel</button>
+                    <button type="submit" id="submit-btn">Add to Inventory</button>
+                </div>
+            </div>
+            </form>
+
+            <div>
+                <h3>Existing Items</h3>
+                <div id="juice-list" class="juice-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCW76Q6rfX8mt5aO6QVNKdPOWbpuT-5K6I",
+            authDomain: "shake-it-and-drink-it.firebaseapp.com",
+            projectId: "shake-it-and-drink-it",
+            storageBucket: "shake-it-and-drink-it.firebasestorage.app",
+            messagingSenderId: "472657702271",
+            appId: "1:472657702271:web:d912c43badf7d2cf81fe4a",
+            measurementId: "G-QM6XHXYZFT"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // SET YOUR AUTHORIZED EMAIL HERE
+        const AUTHORIZED_EMAIL = "omarhassanx2121@gmail.com";
+        let currentEditId = null;
+        let unsubscribeJuices = null;
+
+        // Handle Auth State Changes
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                if (user.email === AUTHORIZED_EMAIL) {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('admin-content').style.display = 'block';
+                    loadJuices();
+                    initRealtimeUpdates();
+                } else {
+                    showToast("Access Denied: Unauthorized email.", "error");
+                    auth.signOut();
+                }
+            } else {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('admin-content').style.display = 'none';
+                if (unsubscribeJuices) {
+                    unsubscribeJuices();
+                    unsubscribeJuices = null;
+                }
+            }
+        });
+        
+        async function loginWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            if (window.location.protocol === 'file:') {
+                showToast("Cannot run from file:// protocol. Use a local server.", "error");
+                return;
+            }
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                showToast("Login failed: " + error.message, "error");
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            const overlay = document.getElementById('modal-overlay');
+            overlay.style.display = 'flex';
+            document.getElementById('modal-confirm-btn').onclick = () => {
+                onConfirm();
+                closeModal();
+            };
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function logout() {
+            auth.signOut();
+            location.reload(); // Reset UI state
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            saveJuice();
+        }
+
+        function resetForm() {
+            ['j_id', 'j_en', 'j_ar', 'j_ps', 'j_pl'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('j_id').disabled = false;
+            document.getElementById('j_id').style.opacity = "1";
+        }
+
+        async function saveJuice() {
+            const id = document.getElementById('j_id').value.trim();
+            const id = document.getElementById('j_id').value.trim().replace(/\s+/g, '-').toLowerCase();
+            const en = document.getElementById('j_en').value.trim();
+            const ar = document.getElementById('j_ar').value.trim();
+            const price_s = parseInt(document.getElementById('j_ps').value);
+            const price_l = parseInt(document.getElementById('j_pl').value);
+
+            if (!id || !en || !ar || isNaN(price_s) || isNaN(price_l)) {
+                showToast("Please fill all fields correctly.", "error");
+                return;
+            }
+
+            try {
+                await db.collection('juices').doc(id).set({ id, en, ar, price_s, price_l });
+                showToast(currentEditId ? "Juice updated!" : "Juice added!", "success");
+                if (currentEditId) cancelEdit();
+                else resetForm();
+                loadJuices();
+            } catch (error) {
+                showToast("Error: " + error.message, "error");
+            }
+        }
+
+        async function startEdit(id) {
+            currentEditId = id;
+            const doc = await db.collection('juices').doc(id).get();
+            if (!doc.exists) return;
+            
+            const data = doc.data();
+            document.getElementById('j_id').value = data.id;
+            document.getElementById('j_id').disabled = true; // Cannot change ID
+            document.getElementById('j_id').style.opacity = "0.6";
+            document.getElementById('j_en').value = data.en;
+            document.getElementById('j_ar').value = data.ar;
+            document.getElementById('j_ps').value = data.price_s;
+            document.getElementById('j_pl').value = data.price_l;
+
+            document.getElementById('form-title').innerText = "Edit Juice";
+            document.getElementById('submit-btn').innerText = "Update Juice";
+            document.getElementById('cancel-edit-btn').style.display = 'block';
+            
+            // Scroll form into view for mobile users
+            document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
+            loadJuices(); // Refresh list to show highlight
+        }
+
+        function cancelEdit() {
+            currentEditId = null;
+            resetForm();
+            document.getElementById('form-title').innerText = "Add New Juice";
+            document.getElementById('submit-btn').innerText = "Add to Inventory";
+            document.getElementById('cancel-edit-btn').style.display = 'none';
+            loadJuices();
+        }
+
+        async function loadJuices() {
+        function initRealtimeUpdates() {
+            const list = document.getElementById('juice-list');
+            if (!list.innerHTML) list.innerHTML = 'Loading...';
+            
+            const snapshot = await db.collection('juices').orderBy('en').get();
+            list.innerHTML = '';
+            snapshot.forEach(doc => {
+                const item = doc.data();
+                const div = document.createElement('div');
+                div.className = 'juice-item';
+                if (currentEditId === doc.id) div.classList.add('editing');
+                div.innerHTML = `
+                    <div class="juice-info">
+                        <b>${item.en}</b>
+                        <span>${item.ar} • S: ${item.price_s} / L: ${item.price_l}</span>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn-icon edit-btn" onclick="startEdit('${doc.id}')">Edit</button>
+                        <button class="btn-icon delete-btn" onclick="confirmDelete('${doc.id}', '${item.en}')">Delete</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            list.innerHTML = '<p style="color: #64748b;">Loading inventory...</p>';
+
+            unsubscribeJuices = db.collection('juices').orderBy('en').onSnapshot(snapshot => {
+                list.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'juice-item' + (currentEditId === doc.id ? ' editing' : '');
+                    div.innerHTML = `
+                        <div class="juice-info">
+                            <b>${item.en}</b>
+                            <span>${item.ar} • S: ${item.price_s} / L: ${item.price_l}</span>
+                        </div>
+                        <div class="action-btns">
+                            <button type="button" class="btn-icon edit-btn" onclick="startEdit('${doc.id}')">Edit</button>
+                            <button type="button" class="btn-icon delete-btn" onclick="confirmDelete('${doc.id}', '${item.en}')">Delete</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+                if (snapshot.empty) list.innerHTML = '<p style="color: #64748b;">No items found.</p>';
+            });
+        }
+
+        function confirmDelete(id, name) {
+            openConfirmModal("Delete Juice", `Are you sure you want to remove "${name}"?`, () => deleteJuice(id));
+        }
+
+        async function deleteJuice(id) {
+            await db.collection('juices').doc(id).delete();
+            showToast("Item removed.", "success");
+            loadJuices();
+        }
+    </script>
+</body>
+</html>
