@@ -154,15 +154,15 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // SET YOUR AUTHORIZED EMAIL HERE
-        const AUTHORIZED_EMAIL = "omarhassanx2121@gmail.com";
+        // SET YOUR AUTHORIZED EMAILS HERE
+        const AUTHORIZED_EMAILS = ["omarhassanx2121@gmail.com", "ahmadhasanx21@gmail.com"];
         let currentEditId = null;
         let unsubscribeJuices = null;
 
         // Handle Auth State Changes
         auth.onAuthStateChanged(user => {
             if (user) {
-                if (user.email === AUTHORIZED_EMAIL) {
+                if (AUTHORIZED_EMAILS.includes(user.email)) {
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('admin-content').style.display = 'block';
                     initRealtimeUpdates();
