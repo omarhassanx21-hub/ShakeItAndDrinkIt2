@@ -194,6 +194,7 @@
                 toastSuccessUpdate: "Juice updated!", toastRemoved: "Item removed.",
                 toastErrorFields: "Please fill all fields correctly.",
                 toastDenied: "Access Denied: Unauthorized email.",
+                toastLoginError: "Login failed: ",
                 toastProtocolError: "Cannot run from file:// protocol. Use a local server.",
                 confirmTitle: "Delete Juice", confirmMsg: "Are you sure you want to remove \"{name}\"?",
                 confirmBtn: "Confirm"
@@ -210,6 +211,7 @@
                 toastSuccessUpdate: "تم تحديث العصير!", toastRemoved: "تمت إزالة الصنف.",
                 toastErrorFields: "يرجى ملء جميع الحقول بشكل صحيح.",
                 toastDenied: "تم رفض الوصول: بريد إلكتروني غير مصرح به.",
+                toastLoginError: "فشل تسجيل الدخول: ",
                 toastProtocolError: "لا يمكن التشغيل من بروتوكول file://. استخدم خادماً محلياً.",
                 confirmTitle: "حذف العصير", confirmMsg: "هل أنت متأكد أنك تريد إزالة \"{name}\"؟",
                 confirmBtn: "تأكيد"
@@ -275,7 +277,7 @@
             try {
                 await auth.signInWithPopup(provider);
             } catch (error) {
-                showToast("Login failed: " + error.message, "error");
+                showToast(translations[currentLang].toastLoginError + error.message, "error");
             }
         }
 
@@ -326,7 +328,7 @@
             const submitBtn = document.getElementById('submit-btn');
             const idInput = document.getElementById('j_id');
             
-            // Sanitize ID: only allow lowercase, numbers, and hyphens
+            // Sanitize ID: only allow lowercase letters, numbers, and single hyphens
             const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
             const en = document.getElementById('j_en').value.trim();
             const ar = document.getElementById('j_ar').value.trim();
