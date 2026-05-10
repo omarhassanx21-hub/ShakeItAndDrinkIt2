@@ -100,7 +100,6 @@
         </nav>
         
         <div class="container">
-            <div class="card" id="form-container">
             <form class="card" id="form-container" onsubmit="handleFormSubmit(event)">
                 <h3 id="form-title">Add New Juice</h3>
                 <div class="input-group">
@@ -126,12 +125,9 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button id="cancel-edit-btn" class="btn-secondary" style="display: none;" onclick="cancelEdit()">Cancel</button>
-                    <button id="submit-btn" onclick="saveJuice()">Add to Inventory</button>
                     <button type="button" id="cancel-edit-btn" class="btn-secondary" style="display: none;" onclick="cancelEdit()">Cancel</button>
                     <button type="submit" id="submit-btn">Add to Inventory</button>
                 </div>
-            </div>
             </form>
 
             <div>
@@ -169,7 +165,6 @@
                 if (user.email === AUTHORIZED_EMAIL) {
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('admin-content').style.display = 'block';
-                    loadJuices();
                     initRealtimeUpdates();
                 } else {
                     showToast("Access Denied: Unauthorized email.", "error");
@@ -242,7 +237,6 @@
         }
 
         async function saveJuice() {
-            const id = document.getElementById('j_id').value.trim();
             const id = document.getElementById('j_id').value.trim().replace(/\s+/g, '-').toLowerCase();
             const en = document.getElementById('j_en').value.trim();
             const ar = document.getElementById('j_ar').value.trim();
@@ -259,7 +253,6 @@
                 showToast(currentEditId ? "Juice updated!" : "Juice added!", "success");
                 if (currentEditId) cancelEdit();
                 else resetForm();
-                loadJuices();
             } catch (error) {
                 showToast("Error: " + error.message, "error");
             }
@@ -285,7 +278,6 @@
             
             // Scroll form into view for mobile users
             document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
-            loadJuices(); // Refresh list to show highlight
         }
 
         function cancelEdit() {
@@ -294,32 +286,10 @@
             document.getElementById('form-title').innerText = "Add New Juice";
             document.getElementById('submit-btn').innerText = "Add to Inventory";
             document.getElementById('cancel-edit-btn').style.display = 'none';
-            loadJuices();
         }
 
-        async function loadJuices() {
         function initRealtimeUpdates() {
             const list = document.getElementById('juice-list');
-            if (!list.innerHTML) list.innerHTML = 'Loading...';
-            
-            const snapshot = await db.collection('juices').orderBy('en').get();
-            list.innerHTML = '';
-            snapshot.forEach(doc => {
-                const item = doc.data();
-                const div = document.createElement('div');
-                div.className = 'juice-item';
-                if (currentEditId === doc.id) div.classList.add('editing');
-                div.innerHTML = `
-                    <div class="juice-info">
-                        <b>${item.en}</b>
-                        <span>${item.ar} • S: ${item.price_s} / L: ${item.price_l}</span>
-                    </div>
-                    <div class="action-btns">
-                        <button class="btn-icon edit-btn" onclick="startEdit('${doc.id}')">Edit</button>
-                        <button class="btn-icon delete-btn" onclick="confirmDelete('${doc.id}', '${item.en}')">Delete</button>
-                    </div>
-                `;
-                list.appendChild(div);
             list.innerHTML = '<p style="color: #64748b;">Loading inventory...</p>';
 
             unsubscribeJuices = db.collection('juices').orderBy('en').onSnapshot(snapshot => {
@@ -351,7 +321,6 @@
         async function deleteJuice(id) {
             await db.collection('juices').doc(id).delete();
             showToast("Item removed.", "success");
-            loadJuices();
         }
     </script>
 </body>
